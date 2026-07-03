@@ -62,8 +62,20 @@
                 <p id="anomaly-type" style="font-size: 1.2em; color: #f87171; margin-bottom: 10px;">No Anomalies Detected</p>
                 <div id="qwen-diagnosis" class="ai-box">Waiting for edge data...</div>
             </div>
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>Ask Qwen AI</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="chat-input" placeholder="e.g., Is this gas dangerous? What should I do?" 
+                        style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1em;">
+                    <button onclick="askQwen()" id="chat-btn"
+                            style="padding: 10px 20px; border-radius: 6px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; transition: 0.3s;">
+                        Ask
+                    </button>
+                </div>
+                <div id="chat-response" class="ai-box">Ask a follow-up question about the current environment...</div>
+            </div>
         </div>
-        <div class="footer">Auto-refreshing every 3 seconds | EdgeAgent v1.0</div>
+        <div class="footer">Auto-refreshing every 3 seconds | Aeris v1.0</div>
     </div>
 
     <script>
@@ -107,6 +119,52 @@
                 document.getElementById('status-badge').className = 'status-badge status-alert';
             }
         }
+
+        async function askQwen() {
+        const input = document.getElementById('chat-input');
+        const responseDiv = document.getElementById('chat-response');
+        const btn = document.getElementById('chat-btn');
+        const question = input.value.trim();
+        
+        if (!question) return;
+        
+        // UI Feedback
+        responseDiv.innerText = "Qwen is thinking...";
+        responseDiv.style.borderLeftColor = "#f59e0b"; // Orange while thinking
+        input.value = "";
+        btn.innerText = "...";
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch(`${API_URL}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: question })
+            });
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                responseDiv.innerText = data.response;
+                responseDiv.style.borderLeftColor = "#38bdf8"; // Blue when success
+            } else {
+                responseDiv.innerText = "Error: " + data.message;
+                responseDiv.style.borderLeftColor = "#ef4444"; // Red on error
+            }
+        } catch (error) {
+            responseDiv.innerText = "Failed to connect to Alibaba Cloud.";
+            responseDiv.style.borderLeftColor = "#ef4444";
+        } finally {
+            btn.innerText = "Ask";
+            btn.disabled = false;
+        }
+    }
+
+    // Allow pressing "Enter" in the input field to send
+    document.getElementById('chat-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            askQwen();
+        }
+    });
 
         updateDashboard();
         setInterval(updateDashboard, 3000);
