@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aeris Live Dashboard</title>
+    <title>Aeris EdgeAgent</title>
     <style>
         body { 
             font-family: 'Segoe UI', system-ui, sans-serif; 
@@ -32,7 +32,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>️Aeris EdgeAgent</h1>
+            <h1>🌬️ Aeris EdgeAgent</h1>
             <p class="subtitle">Powered by Alibaba Cloud Function Compute & Qwen AI</p>
         </header>
 
@@ -75,29 +75,32 @@
 
         async function updateDashboard() {
             try {
-                // Fetch from /api/latest which reads from persistent OSS storage
                 const res = await fetch(`${API_URL}/api/latest`);
                 const data = await res.json();
                 
-                // Update UI
+                // Update timestamp
                 document.getElementById('timestamp').innerText = new Date(data.timestamp * 1000).toLocaleTimeString();
+                
+                // Update sensor readings
                 document.getElementById('temp_p').innerText = data.sensors.temp_p.toFixed(1);
                 document.getElementById('hum_p').innerText = data.sensors.hum_p.toFixed(1);
                 document.getElementById('gas_p').innerText = Math.round(data.sensors.gas_p / 1000);
+                
                 document.getElementById('temp_s').innerText = data.sensors.temp_s.toFixed(1);
                 document.getElementById('hum_s').innerText = data.sensors.hum_s.toFixed(1);
                 document.getElementById('gas_s').innerText = Math.round(data.sensors.gas_s / 1000);
                 
+                // Update status based on anomaly
                 const badge = document.getElementById('status-badge');
                 const typeEl = document.getElementById('anomaly-type');
                 
-                if(data.anomaly_type && data.anomaly_type !== 'None'){
-                    badge.innerText = '️ANOMALY DETECTED';
+                if (data.anomaly_type && data.anomaly_type !== 'None') {
+                    badge.innerText = 'ANOMALY DETECTED';
                     badge.className = 'status-badge status-alert';
                     typeEl.innerText = `${data.anomaly_type} (${(data.confidence * 100).toFixed(0)}% Confidence)`;
                     document.getElementById('qwen-diagnosis').innerText = data.qwen_diagnosis || 'Analysing...';
                 }
-                else{
+                else {
                     badge.innerText = 'ALL SYSTEMS NORMAL';
                     badge.className = 'status-badge status-ok';
                     typeEl.innerText = 'No Anomalies Detected';
