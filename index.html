@@ -76,7 +76,8 @@
                 const data = await res.json();
                 console.log("Received data:", data);
                 
-                document.getElementById('timestamp').innerText = new Date(data.timestamp * 1000).toLocaleTimeString();
+                const now = new Date();
+                document.getElementById('timestamp').innerText = now.toLocaleTimeString('en-GB');
                 document.getElementById('temp_p').innerText = data.sensors.temp_p.toFixed(1);
                 document.getElementById('hum_p').innerText = data.sensors.hum_p.toFixed(1);
                 document.getElementById('gas_p').innerText = Math.round(data.sensors.gas_p / 1000);
