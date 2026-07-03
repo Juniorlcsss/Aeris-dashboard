@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aeris Live Dashboard</title>
+    <style>
+        body{ font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+        .container{ max-width: 1200px; margin: 0 auto; }
+        header{ text-align: center; margin-bottom: 30px; }
+        h1{ color: #38bdf8; margin: 0; font-size: 2.5em; }
+        .subtitle{ color: #94a3b8; margin-top: 5px; }
+        .grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card{ background: #1e293b; border-radius: 12px; padding: 25px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h3{ margin-top: 0; color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        .metric{ font-size: 2.5em; font-weight: bold; margin: 10px 0; color: #f8fafc; }
+        .status-badge{ padding: 8px 16px; border-radius: 20px; font-weight: bold; display: inline-block; }
+        .status-ok{ background: #064e3b; color: #34d399; }
+        .status-alert{ background: #7f1d1d; color: #f87171; animation: pulse 1.5s infinite; }
+        @keyframes pulse{ 0%{ opacity: 1; } 50%{ opacity: 0.6; } 100%{ opacity: 1; } }
+        .sensor-row{ display: flex; justify-content: space-between; margin: 10px 0; padding: 8px; background: #0f172a; border-radius: 6px; }
+        .ai-box{ background: #0f172a; border-left: 4px solid #38bdf8; padding: 15px; margin-top: 15px; font-style: italic; line-height: 1.6; color: #cbd5e1; }
+        .footer{ text-align: center; margin-top: 30px; color: #64748b; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Aeris Live Dashboard</h1>
+            <p class="subtitle">Powered by Alibaba Cloud Function Compute & Qwen AI</p>
+        </header>
+
+        <div class="grid">
+            <!-- System Status -->
+            <div class="card">
+                <h3>System Status</h3>
+                <div id="status-badge" class="status-badge status-ok">ONLINE</div>
+                <p style="margin-top: 15px; color: #94a3b8;">Last Update: <span id="timestamp">--</span></p>
+            </div>
+
+            <!-- Primary Sensor -->
+            <div class="card">
+                <h3>Primary Sensor(0x76)</h3>
+                <div class="metric"><span id="temp_p">--</span>°C</div>
+                <div class="sensor-row"><span>Humidity:</span> <span id="hum_p">--</span>%</div>
+                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gas_p">--</span> kΩ</div>
+            </div>
+
+            <!-- Secondary Sensor -->
+            <div class="card">
+                <h3>Secondary Sensor(0x77)</h3>
+                <div class="metric"><span id="temp_s">--</span>°C</div>
+                <div class="sensor-row"><span>Humidity:</span> <span id="hum_s">--</span>%</div>
+                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gas_s">--</span> kΩ</div>
+            </div>
+
+            <!-- AI Diagnosis -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>Qwen AI Diagnosis</h3>
+                <p id="anomaly-type" style="font-size: 1.2em; color: #f87171; margin-bottom: 10px;">No Anomalies Detected</p>
+                <div id="qwen-diagnosis" class="ai-box">Waiting for edge data...</div>
+            </div>
+        </div>
+        <div class="footer">Auto-refreshing every 3 seconds | Aeris v1.0</div>
+    </div>
+
+    <script>
+        const API_URL = 'https://aeris-dashboard-ngrzevvlaw.eu-west-1.fcapp.run'; 
+
+        async function updateDashboard(){
+            try{
+                const response = await fetch(`${API_URL}/api/latest`);
+                const data = await response.json();
+                
+                // Update UI
+                document.getElementById('timestamp').innerText = new Date(data.timestamp * 1000).toLocaleTimeString();
+                document.getElementById('temp_p').innerText = data.sensors.temp_p.toFixed(1);
+                document.getElementById('hum_p').innerText = data.sensors.hum_p.toFixed(1);
+                document.getElementById('gas_p').innerText = Math.round(data.sensors.gas_p / 1000);
+                document.getElementById('temp_s').innerText = data.sensors.temp_s.toFixed(1);
+                document.getElementById('hum_s').innerText = data.sensors.hum_s.toFixed(1);
+                document.getElementById('gas_s').innerText = Math.round(data.sensors.gas_s / 1000);
+                
+                const badge = document.getElementById('status-badge');
+                const typeEl = document.getElementById('anomaly-type');
+                
+                if(data.anomaly_type && data.anomaly_type !== 'None'){
+                    badge.innerText = 'ANOMALY DETECTED';
+                    badge.className = 'status-badge status-alert';
+                    typeEl.innerText = `${data.anomaly_type}(${(data.confidence * 100).toFixed(0)}% Confidence)`;
+                    document.getElementById('qwen-diagnosis').innerText = data.qwen_diagnosis || 'Analysing...';
+                }
+                else{
+                    badge.innerText = 'ALL SYSTEMS NORMAL';
+                    badge.className = 'status-badge status-ok';
+                    typeEl.innerText = 'No Anomalies Detected';
+                    document.getElementById('qwen-diagnosis').innerText = 'Environment stable. All sensor readings within normal parameters.';
+                }
+            } catch(error){
+                console.error('Error fetching data:', error);
+                document.getElementById('status-badge').innerText = 'OFFLINE';
+                document.getElementById('status-badge').className = 'status-badge status-alert';
+            }
+        }
+
+        updateDashboard();
+        setInterval(updateDashboard, 3000);
+    </script>
+</body>
+</html>
