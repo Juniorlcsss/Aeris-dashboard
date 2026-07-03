@@ -21,9 +21,27 @@
         .card h3 { margin-top: 0; color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 10px; }
         .metric { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: #f8fafc; }
         .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; display: inline-block; }
-        .status-ok { background: #064e3b; color: #34d399; }
-        .status-alert { background: #7f1d1d; color: #f87171; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        
+        /*severity*/
+        .severity-normal { border-left: 4px solid #10b981 !important; }
+        .status-badge.severity-normal { background: #064e3b; color: #34d399; border: 1px solid #10b981; }
+        .severity-moderate { border-left: 4px solid #f59e0b !important; }
+        .status-badge.severity-moderate { background: #78350f; color: #fbbf24; border: 1px solid #f59e0b; }
+        .severity-high { border-left: 4px solid #f97316 !important; }
+        .status-badge.severity-high { background: #7c2d12; color: #fb923c; border: 1px solid #f97316; }
+        .severity-critical { border-left: 4px solid #ef4444 !important; animation: pulse-border 1.5s infinite; }
+        .status-badge.severity-critical { background: #7f1d1d; color: #f87171; border: 1px solid #ef4444; animation: pulse-badge 1.5s infinite; }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 15px 5px rgba(239, 68, 68, 0); }/*w cat girls :3*/
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes pulse-badge {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
         .sensor-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px; background: #0f172a; border-radius: 6px; }
         .ai-box { background: #0f172a; border-left: 4px solid #38bdf8; padding: 15px; margin-top: 15px; font-style: italic; line-height: 1.6; color: #cbd5e1; }
         .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 0.9em; }
@@ -39,7 +57,7 @@
         <div class="grid">
             <div class="card">
                 <h3>System Status</h3>
-                <div id="status-badge" class="status-badge status-ok">ONLINE</div>
+                <div id="status-badge" class="status-badge severity-normal">NORMAL (0%)</div>
                 <p style="margin-top: 15px; color: #94a3b8;">Last Update: <span id="timestamp">--</span></p>
             </div>
 
@@ -57,11 +75,12 @@
                 <div class="sensor-row"><span>Gas Resistance:</span> <span id="gas_s">--</span> kΩ</div>
             </div>
 
-            <div class="card" style="grid-column: 1 / -1;">
+            <div id="diagnosis-card" class="card severity-normal" style="grid-column: 1 / -1;">
                 <h3>Qwen AI Diagnosis</h3>
-                <p id="anomaly-type" style="font-size: 1.2em; color: #f87171; margin-bottom: 10px;">No Anomalies Detected</p>
-                <div id="qwen-diagnosis" class="ai-box">Waiting for edge data...</div>
+                <p id="anomaly-type" style="font-size: 1.2em; margin-bottom: 10px; color: #94a3b8;">No Anomalies Detected</p>
+                <div id="qwen-diagnosis" class="ai-box">Environment stable. All sensor readings within normal parameters.</div>
             </div>
+
             <div class="card" style="grid-column: 1 / -1;">
                 <h3>Ask Qwen AI</h3>
                 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -90,33 +109,69 @@
                 
                 const now = new Date();
                 document.getElementById('timestamp').innerText = now.toLocaleTimeString('en-GB');
-                document.getElementById('temp_p').innerText = data.sensors.temp_p.toFixed(1);
-                document.getElementById('hum_p').innerText = data.sensors.hum_p.toFixed(1);
-                document.getElementById('gas_p').innerText = Math.round(data.sensors.gas_p / 1000);
-                document.getElementById('temp_s').innerText = data.sensors.temp_s.toFixed(1);
-                document.getElementById('hum_s').innerText = data.sensors.hum_s.toFixed(1);
-                document.getElementById('gas_s').innerText = Math.round(data.sensors.gas_s / 1000);
-                
+                document.getElementById('temp_p').innerText = data.sensors?.temp_p ? data.sensors.temp_p.toFixed(1) : '--';
+                document.getElementById('hum_p').innerText = data.sensors?.hum_p ? data.sensors.hum_p.toFixed(1) : '--';
+                document.getElementById('gas_p').innerText = data.sensors?.gas_p ? Math.round(data.sensors.gas_p / 1000) : '--';
+                document.getElementById('temp_s').innerText = data.sensors?.temp_s ? data.sensors.temp_s.toFixed(1) : '--';
+                document.getElementById('hum_s').innerText = data.sensors?.hum_s ? data.sensors.hum_s.toFixed(1) : '--';
+                document.getElementById('gas_s').innerText = data.sensors?.gas_s ? Math.round(data.sensors.gas_s / 1000) : '--';
+
+                //severity
+                const confidence = data.confidence || 0;
+                const anomalyType = data.anomaly_type || 'None';
                 const badge = document.getElementById('status-badge');
+                const diagCard = document.getElementById('diagnosis-card');
                 const typeEl = document.getElementById('anomaly-type');
+                const diagBox = document.getElementById('qwen-diagnosis');
+
+                //clear previous severity classes
+                const severityClasses = ['severity-normal', 'severity-moderate', 'severity-high', 'severity-critical'];
+                badge.classList.remove(...severityClasses);
+                diagCard.classList.remove(...severityClasses);
+
+                let currentSeverity = '';
+                let severityLabel = '';
                 
-                if (data.anomaly_type && data.anomaly_type !== 'None') {
-                    badge.innerText = 'ANOMALY DETECTED';
-                    badge.className = 'status-badge status-alert';
-                    typeEl.innerText = `${data.anomaly_type} (${(data.confidence * 100).toFixed(0)}%)`;
-                    document.getElementById('qwen-diagnosis').innerText = data.qwen_diagnosis || 'Analysing...';
+
+                if (anomalyType !== 'None' && confidence > 0){
+                    if(confidence >= 0.8){
+                        currentSeverity = 'severity-critical';
+                        severityLabel = 'CRITICAL';
+                    }
+                    else if (confidence >= 0.6){
+                        currentSeverity = 'severity-high';
+                        severityLabel = 'HIGH';
+                    }
+                    else if (confidence >= 0.3){
+                        currentSeverity = 'severity-moderate';
+                        severityLabel = 'MODERATE';
+                    }
+                    else{
+                        currentSeverity = 'severity-moderate'; //fallback
+                        severityLabel = 'LOW';
+                    }
+                    
+                    badge.classList.add(currentSeverity);
+                    diagCard.classList.add(currentSeverity);
+                    badge.innerText = `${severityLabel} (${(confidence * 100).toFixed(0)}%)`;
+                    typeEl.innerText = `⚠️ ${anomalyType} Detected`;
+                    typeEl.style.color = '#f87171';
+                    diagBox.innerText = data.qwen_diagnosis || 'Analysing threat level...';
                 }
-                else {
-                    badge.innerText = 'ALL SYSTEMS NORMAL';
-                    badge.className = 'status-badge status-ok';
+                else{
+                    //norm state
+                    currentSeverity = 'severity-normal';
+                    badge.classList.add(currentSeverity);
+                    diagCard.classList.add(currentSeverity);
+                    badge.innerText = 'NORMAL (0%)';
                     typeEl.innerText = 'No Anomalies Detected';
-                    document.getElementById('qwen-diagnosis').innerText = 'Environment stable. All sensor readings within normal parameters.';
+                    typeEl.style.color = '#94a3b8';
+                    diagBox.innerText = 'Environment stable. All sensor readings within normal parameters.';
                 }
-            }
-            catch (error) {
+            } catch (error) {
                 console.error('Error fetching data:', error);
                 document.getElementById('status-badge').innerText = 'OFFLINE';
-                document.getElementById('status-badge').className = 'status-badge status-alert';
+                document.getElementById('status-badge').className = 'status-badge severity-critical';
             }
         }
 
