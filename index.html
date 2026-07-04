@@ -133,7 +133,7 @@
                 let severityLabel = '';
                 
 
-                if (anomalyType !== 'None' && confidence > 0){
+                if(anomalyType !== 'None' && confidence > 0){
                     if(confidence >= 0.8){
                         currentSeverity = 'severity-critical';
                         severityLabel = 'CRITICAL';
@@ -168,7 +168,8 @@
                     typeEl.style.color = '#94a3b8';
                     diagBox.innerText = 'Environment stable. All sensor readings within normal parameters.';
                 }
-            } catch (error) {
+            }
+            catch (error){
                 console.error('Error fetching data:', error);
                 document.getElementById('status-badge').innerText = 'OFFLINE';
                 document.getElementById('status-badge').className = 'status-badge severity-critical';
@@ -181,7 +182,9 @@
         const btn = document.getElementById('chat-btn');
         const question = input.value.trim();
         
-        if (!question) return;
+        if(!question){
+            return;
+        }
         
         // UI Feedback
         responseDiv.innerText = "Qwen is thinking...";
@@ -190,7 +193,7 @@
         btn.innerText = "...";
         btn.disabled = true;
         
-        try {
+        try{
             const res = await fetch(`${API_URL}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -198,17 +201,21 @@
             });
             const data = await res.json();
             
-            if (data.status === 'success') {
+            if(data.status === 'success'){
                 responseDiv.innerText = data.response;
-                responseDiv.style.borderLeftColor = "#38bdf8"; // Blue when success
-            } else {
-                responseDiv.innerText = "Error: " + data.message;
-                responseDiv.style.borderLeftColor = "#ef4444"; // Red on error
+                responseDiv.style.borderLeftColor = "#38bdf8";
             }
-        } catch (error) {
-            responseDiv.innerText = "Failed to connect to Alibaba Cloud.";
+            else{
+                responseDiv.innerText = "Error: " + data.message;
+                responseDiv.style.borderLeftColor = "#ef4444"; 
+            }
+        }
+        catch(error) {
+            responseDiv.innerText = "Connection Failed: " + error.message;
             responseDiv.style.borderLeftColor = "#ef4444";
-        } finally {
+            console.error("Full fetch error:", error);
+        }
+        finally{
             btn.innerText = "Ask";
             btn.disabled = false;
         }
