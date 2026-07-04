@@ -63,9 +63,18 @@
 
             <div class="card">
                 <h3>Primary Sensor (0x76)</h3>
-                <div class="metric"><span id="temp_p">--</span>°C</div>
+                <div class="metric"><span id="temp_p">--</span>°C <span id="trend_temp_icon" style="font-size: 0.5em;">-></span></div>
                 <div class="sensor-row"><span>Humidity:</span> <span id="hum_p">--</span>%</div>
-                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gas_p">--</span> kΩ</div>
+                <div class="sensor-row">
+                    <span>Gas Resistance:</span> 
+                    <div>
+                        <span id="gas_p">--</span> kΩ 
+                        <span id="trend_gas_icon" style="font-size: 1.2em; margin-left: 5px;">-></span>
+                    </div>
+                </div>
+                <div id="trend-alert" style="margin-top: 10px; font-size: 0.9em; color: #fbbf24; display: none; font-weight: bold;">
+                    Predictive Alert: Gas levels rising rapidly!
+                </div>
             </div>
 
             <div class="card">
@@ -115,6 +124,43 @@
                 document.getElementById('temp_s').innerText = data.sensors?.temp_s ? data.sensors.temp_s.toFixed(1) : '--';
                 document.getElementById('hum_s').innerText = data.sensors?.hum_s ? data.sensors.hum_s.toFixed(1) : '--';
                 document.getElementById('gas_s').innerText = data.sensors?.gas_s ? Math.round(data.sensors.gas_s / 1000) : '--';
+
+                //predictive trend
+                const trendGas = data.trend_gas || 'Stable';
+                const trendTemp = data.trend_temp || 'Stable';
+
+                // Update Gas Icon
+                const gasIcon = document.getElementById('trend_gas_icon');
+                const trendAlert = document.getElementById('trend-alert');
+                if (trendGas.includes('Rising Rapidly')) {
+                    gasIcon.innerText = '📈🔴';
+                    trendAlert.style.display = 'block';
+                    trendAlert.innerText = `Predictive Alert: Gas ${trendGas}! Anomaly likely in < 2 mins.`;
+                }
+                else if(trendGas.includes('Rising Slowly')){
+                    gasIcon.innerText = '📈🟡';
+                    trendAlert.style.display = 'none';
+                }
+                else if(trendGas.includes('Falling')){
+                    gasIcon.innerText = '📉';
+                    trendAlert.style.display = 'none';
+                }
+                else{
+                    gasIcon.innerText = '➡️⚪';
+                    trendAlert.style.display = 'none';
+                }
+
+                // Update Temp Icon
+                const tempIcon = document.getElementById('trend_temp_icon');
+                if(trendTemp.includes('Rising')){
+                    tempIcon.innerText = '📈';
+                }
+                else if(trendTemp.includes('Falling')){
+                    tempIcon.innerText = '📉';
+                }
+                else{
+                    tempIcon.innerText = '➡️';
+                }
 
                 //severity
                 const confidence = data.confidence || 0;
