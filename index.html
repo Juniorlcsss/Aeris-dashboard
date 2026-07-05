@@ -102,6 +102,24 @@
                 </div>
                 <div id="chat-response" class="ai-box">Ask a follow-up question about the current environment...</div>
             </div>
+
+            <div class="card" style="grid-column: 1 / -1; border-left: 4px solid #8b5cf6;">
+                <h3 style="color: #8b5cf6;">🧠 Qwen ML Engine: Predictive Analysis</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9em; margin-bottom: 5px;">Detected Pattern</div>
+                        <div id="ml-pattern" style="font-weight: bold; color: #e2e8f0;">Analyzing historical OSS data...</div>
+                    </div>
+                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9em; margin-bottom: 5px;">10-Min Anomaly Prediction</div>
+                        <div id="ml-prediction" style="font-weight: bold; font-size: 1.2em; color: #38bdf8;">Calculating...</div>
+                    </div>
+                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
+                        <div style="color: #94a3b8; font-size: 0.9em; margin-bottom: 5px;">Optimization Recommendation</div>
+                        <div id="ml-recommendation" style="font-style: italic; color: #cbd5e1;">Waiting for data...</div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="footer">Auto-refreshing every 3 seconds | Aeris v1.0</div>
     </div>
@@ -222,6 +240,37 @@
             }
         }
 
+        async function updateMLInsights() {
+            try{
+                const res = await fetch(`${API_URL}/api/ml-insights`);
+                const data = await res.json();
+                
+                if(data.status === 'success' && data.insight){
+                    //string+obj
+                    const insight = typeof data.insight === 'string' ? JSON.parse(data.insight) : data.insight;
+                    
+                    document.getElementById('ml-pattern').innerText = insight.pattern || "Analysing...";
+                    
+                    const predEl = document.getElementById('ml-prediction');
+                    predEl.innerText = insight.prediction || "Low";
+                    if(insight.prediction && insight.prediction.includes("High")){
+                        predEl.style.color = "#ef4444";
+                    }
+                    else if(insight.prediction && insight.prediction.includes("Medium")){
+                        predEl.style.color = "#f59e0b"; 
+                    }
+                    else{
+                        predEl.style.color = "#10b981"; 
+                    }
+                    
+                    document.getElementById('ml-recommendation').innerText = insight.recommendation || "Waiting...";
+                }
+            }
+            catch (error){
+                console.error("ML Insight fetch failed:", error);
+            }
+        }
+
         async function askQwen() {
         const input = document.getElementById('chat-input');
         const responseDiv = document.getElementById('chat-response');
@@ -276,6 +325,10 @@
 
         updateDashboard();
         setInterval(updateDashboard, 3000);
+
+        //ml engine
+        updateMLInsights();
+        setInterval(updateMLInsights, 15000);
     </script>
 </body>
 </html>
