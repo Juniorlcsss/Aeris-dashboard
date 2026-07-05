@@ -135,7 +135,7 @@
                 const trendGas = data.trend_gas || 'Stable';
                 const gasIcon = document.getElementById('trend_gas_icon');
                 const trendAlert = document.getElementById('trend-alert');
-                if (trendGas.includes('Rising Rapidly')) { gasIcon.innerText = '📈🔴'; trendAlert.style.display = 'block'; trendAlert.innerText = `⚠️ Gas ${trendGas}!`; }
+                if (trendGas.includes('Rising Rapidly')) { gasIcon.innerText = '📈🔴'; trendAlert.style.display = 'block'; trendAlert.innerText = `Gas ${trendGas}!`; }
                 else if (trendGas.includes('Rising Slowly')) { gasIcon.innerText = '📈🟡'; trendAlert.style.display = 'none'; }
                 else { gasIcon.innerText = '➡️⚪'; trendAlert.style.display = 'none'; }
 
@@ -157,7 +157,7 @@
                     let label = confidence >= 0.8 ? 'CRITICAL' : confidence >= 0.6 ? 'HIGH' : 'MODERATE';
                     badge.classList.add(sev); diagCard.classList.add(sev);
                     badge.innerText = `${label} (${(confidence * 100).toFixed(0)}%)`;
-                    document.getElementById('anomaly-type').innerText = `⚠️ ${anomalyType} Detected`;
+                    document.getElementById('anomaly-type').innerText = `!${anomalyType} Detected`;
                     document.getElementById('qwen-diagnosis').innerText = data.qwen_diagnosis || 'Analysing...';
                 } else {
                     badge.classList.add('severity-normal'); diagCard.classList.add('severity-normal');
