@@ -3,294 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aeris Live Dashboard</title>
-    <!-- Chart.js for Historical Graph -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Aeris</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; min-height: 100vh; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
         header { text-align: center; margin-bottom: 30px; }
-        h1 { color: #38bdf8; margin: 0; font-size: 2.5em; }
-        .subtitle { color: #94a3b8; margin-top: 5px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: #1e293b; border-radius: 12px; padding: 25px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .card h3 { margin-top: 0; color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 10px; }
-        .metric { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: #f8fafc; }
-        .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; display: inline-block; }
-        
-        .severity-normal { border-left: 4px solid #10b981 !important; }
-        .status-badge.severity-normal { background: #064e3b; color: #34d399; border: 1px solid #10b981; }
-        .severity-moderate { border-left: 4px solid #f59e0b !important; }
-        .status-badge.severity-moderate { background: #78350f; color: #fbbf24; border: 1px solid #f59e0b; }
-        .severity-high { border-left: 4px solid #f97316 !important; }
-        .status-badge.severity-high { background: #7c2d12; color: #fb923c; border: 1px solid #f97316; }
-        .severity-critical { border-left: 4px solid #ef4444 !important; animation: pulse-border 1.5s infinite; }
-        .status-badge.severity-critical { background: #7f1d1d; color: #f87171; border: 1px solid #ef4444; animation: pulse-badge 1.5s infinite; }
-        
-        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 15px 5px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        @keyframes pulse-badge { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
-        
+        header h1 { font-size: 3em; margin-bottom: 10px; color: #38bdf8; }
+        header p { font-size: 1.2em; color: #94a3b8; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: #1e293b; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid #334155; }
+        .card h2 { color: #38bdf8; margin-bottom: 20px; font-size: 1.5em; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        .status-indicator { display: inline-block; padding: 8px 20px; border-radius: 20px; font-weight: bold; }
+        .status-normal { background: #064e3b; color: #34d399; border: 1px solid #10b981; }
+        .status-warning { background: #78350f; color: #fbbf24; border: 1px solid #f59e0b; }
+        .status-critical { background: #7f1d1d; color: #f87171; border: 1px solid #ef4444; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .reading-value { font-size: 1.5em; font-weight: bold; color: #f8fafc; margin: 10px 0; }
+        .reading-label { color: #94a3b8; font-size: 0.9em; }
         .sensor-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px; background: #0f172a; border-radius: 6px; }
-        .ai-box { background: #0f172a; border-left: 4px solid #38bdf8; padding: 15px; margin-top: 15px; font-style: italic; line-height: 1.6; color: #cbd5e1; }
-        .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 0.9em; }
+        .audit-item { background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #38bdf8; }
+        .audit-item.critical { border-left-color: #ef4444; }
+        .audit-item.high { border-left-color: #f59e0b; }
+        .audit-item.moderate { border-left-color: #3b82f6; }
+        .audit-time { font-size: 0.85em; color: #94a3b8; margin-bottom: 5px; }
+        .audit-type { font-weight: bold; color: #e2e8f0; margin-bottom: 5px; }
+        .audit-confidence { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; background: #1e293b; color: #38bdf8; border: 1px solid #334155; }
+        .no-data { text-align: center; padding: 30px; color: #64748b; font-style: italic; }
+        .chat-input { width: 100%; padding: 12px; border: 2px solid #334155; border-radius: 8px; background: #0f172a; color: #e2e8f0; font-size: 1em; margin-bottom: 10px; }
+        .chat-btn { padding: 12px 24px; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .chat-btn:hover { background: #7dd3fc; }
+        .chat-btn:disabled { background: #64748b; cursor: not-allowed; }
+        .ai-response { background: #0f172a; border-left: 4px solid #38bdf8; padding: 15px; border-radius: 0 8px 8px 0; margin-top: 10px; font-style: italic; line-height: 1.6; color: #cbd5e1; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Aeris</h1>
-            <p class="subtitle">Powered by Alibaba Cloud Function Compute & Qwen AI</p>
+            <p>Powered by Alibaba Cloud Function Compute & Qwen AI</p>
         </header>
 
         <div class="grid">
+            <!-- System Status -->
             <div class="card">
-                <h3>System Status</h3>
-                <div id="status-badge" class="status-badge severity-normal">NORMAL (0%)</div>
-                <p style="margin-top: 15px; color: #94a3b8;">Last Update: <span id="timestamp">--</span></p>
+                <h2>System Status</h2>
+                <div id="systemStatus">
+                    <span class="status-indicator status-normal">NORMAL (0%)</span>
+                </div>
+                <p style="margin-top: 15px; color: #94a3b8;">Last Update: <span id="lastUpdate">--</span></p>
             </div>
 
+            <!-- Primary Sensor -->
             <div class="card">
-                <h3>Primary Sensor (0x76)</h3>
-                <div class="metric"><span id="temp_p">--</span>°C <span id="trend_temp_icon" style="font-size: 0.5em;">➡️</span></div>
-                <div class="sensor-row"><span>Humidity:</span> <span id="hum_p">--</span>%</div>
-                <div class="sensor-row"><span>Gas Resistance:</span> <div><span id="gas_p">--</span> kΩ <span id="trend_gas_icon" style="font-size: 1.2em; margin-left: 5px;">➡️</span></div></div>
-                <div id="trend-alert" style="margin-top: 10px; font-size: 0.9em; color: #fbbf24; display: none; font-weight: bold;">Predictive Alert!</div>
+                <h2>Primary Sensor (0x76)</h2>
+                <div class="reading-value"><span id="tempPrimary">--</span>°C <span id="tempTrendPrimary" style="font-size: 0.5em;">➡️</span></div>
+                <div class="sensor-row"><span>Humidity:</span> <span id="humPrimary">--</span>%</div>
+                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gasPrimary">--</span> kΩ <span id="gasTrendPrimary" style="font-size: 1.2em;">➡️</span></div>
+                <div id="alertPrimary" style="display:none; color: #ef4444; font-weight: bold; margin-top: 10px;">️ Predictive Alert!</div>
             </div>
 
             <!-- Secondary Sensor -->
             <div class="card">
-                <h3>Secondary Sensor (0x77)</h3>
-                <div class="metric"><span id="temp_s">--</span>°C</div>
-                <div class="sensor-row"><span>Humidity:</span> <span id="hum_s">--</span>%</div>
-                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gas_s">--</span> kΩ</div>
+                <h2>Secondary Sensor (0x77)</h2>
+                <div class="reading-value"><span id="tempSecondary">--</span>°C</div>
+                <div class="sensor-row"><span>Humidity:</span> <span id="humSecondary">--</span>%</div>
+                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gasSecondary">--</span> kΩ</div>
             </div>
 
-            <div id="diagnosis-card" class="card severity-normal" style="grid-column: 1 / -1;">
-                <h3>Qwen AI Diagnosis</h3>
-                <p id="anomaly-type" style="font-size: 1.2em; margin-bottom: 10px; color: #94a3b8;">No Anomalies Detected</p>
-                <div id="qwen-diagnosis" class="ai-box">Environment stable. All sensor readings within normal parameters.</div>
-            </div>
-
+            <!-- Qwen AI Diagnosis -->
             <div class="card" style="grid-column: 1 / -1;">
-                <h3>Historical Telemetry (Last 30 Mins)</h3>
-                <canvas id="historyChart" height="100"></canvas>
-            </div>
-
-            <div class="card" style="grid-column: 1 / -1; border-left: 4px solid #8b5cf6;">
-                <h3 style="color: #8b5cf6;">Incident Audit Trail (From Alibaba OSS)</h3>
-                <div id="audit-trail-container" style="max-height: 300px; overflow-y: auto;">
-                    <p style="color: #94a3b8;">Loading recent anomalies from cloud storage...</p>
+                <h2>Qwen AI Diagnosis</h2>
+                <div id="aiDiagnosis">
+                    <div style="color: #10b981; font-weight: bold; margin-bottom: 10px;">No Anomalies Detected</div>
+                    <p>Environment stable. All sensor readings within normal parameters.</p>
                 </div>
             </div>
 
-            <div class="card" style="grid-column: 1 / -1; border-left: 4px solid #8b5cf6;">
-                <h3 style="color: #8b5cf6;">Qwen ML Engine: Predictive Analysis</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
-                        <div style="color: #94a3b8; font-size: 0.9em; margin-bottom: 5px;">Detected Pattern</div>
-                        <div id="ml-pattern" style="font-weight: bold; color: #e2e8f0;">Analysing...</div>
-                    </div>
-                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
-                        <div style="color: #94a3b8; font-size: 0.9em; margin-bottom: 5px;">10-Min Anomaly Prediction</div>
-                        <div id="ml-prediction" style="font-weight: bold; font-size: 1.2em; color: #38bdf8;">Calculating...</div>
-                    </div>
-                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
-                        <div style="color: #94a3b8; font-size: 0.9em; margin-bottom: 5px;">Optimisation Recommendation</div>
-                        <div id="ml-recommendation" style="font-style: italic; color: #cbd5e1;">Waiting...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat -->
+            <!-- Historical Telemetry -->
             <div class="card" style="grid-column: 1 / -1;">
-                <h3>Ask Qwen AI</h3>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <input type="text" id="chat-input" placeholder="e.g., Is this gas dangerous?" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1em;">
-                    <button onclick="askQwen()" id="chat-btn" style="padding: 10px 20px; border-radius: 6px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer;">Ask</button>
+                <h2>Historical Telemetry</h2>
+                <canvas id="telemetryChart" height="100"></canvas>
+            </div>
+
+            <!-- Incident Audit Trail -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Incident Audit Trail</h2>
+                <div id="auditTrail">
+                    <div class="no-data">Loading recent anomalies from cloud storage...</div>
                 </div>
-                <div id="chat-response" class="ai-box">Ask a follow-up question...</div>
+            </div>
+
+            <!-- Qwen ML Engine -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Qwen ML Engine: Predictive Analysis</h2>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 0;">
+                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
+                        <div class="reading-label">Detected Pattern</div>
+                        <div class="reading-value" style="font-size: 1.1em;" id="mlPattern">Analysing...</div>
+                    </div>
+                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
+                        <div class="reading-label">10-Min Anomaly Prediction</div>
+                        <div class="reading-value" style="font-size: 1.1em;" id="mlPrediction">Calculating...</div>
+                    </div>
+                    <div style="background: #0f172a; padding: 15px; border-radius: 8px;">
+                        <div class="reading-label">Optimisation Recommendation</div>
+                        <div class="reading-value" style="font-size: 1.1em;" id="mlRecommendation">Waiting...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ask Qwen AI -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Ask Qwen AI</h2>
+                <input type="text" id="chatInput" class="chat-input" placeholder="Ask a follow-up question...">
+                <button id="chatBtn" class="chat-btn" onclick="askQwen()">Ask</button>
+                <div id="chatResponse" class="ai-response">Ask a follow-up question about the current environment...</div>
             </div>
         </div>
-        <div class="footer">Auto-refreshing | Aeris v1.0 Final</div>
     </div>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const API_URL = 'https://aeris-dashboard-ngrzevvlaw.eu-west-1.fcapp.run';
-        let historyChart = null;
+        let chartInstance = null;
 
-        // 1. LIVE DASHBOARD UPDATE
-        async function updateDashboard() {
-            try {
+        async function fetchSensorData(){
+            try{
                 const res = await fetch(`${API_URL}/api/latest`);
-                const data = await res.json();
-                
-                document.getElementById('timestamp').innerText = new Date().toLocaleTimeString('en-GB');
-                document.getElementById('temp_p').innerText = data.sensors?.temp_p ? data.sensors.temp_p.toFixed(1) : '--';
-                document.getElementById('hum_p').innerText = data.sensors?.hum_p ? data.sensors.hum_p.toFixed(1) : '--';
-                document.getElementById('gas_p').innerText = data.sensors?.gas_p ? Math.round(data.sensors.gas_p / 1000) : '--';
-                document.getElementById('temp_s').innerText = data.sensors?.temp_s ? data.sensors.temp_s.toFixed(1) : '--';
-                document.getElementById('hum_s').innerText = data.sensors?.hum_s ? data.sensors.hum_s.toFixed(1) : '--';
-                document.getElementById('gas_s').innerText = data.sensors?.gas_s ? Math.round(data.sensors.gas_s / 1000) : '--';
-
-                const trendGas = data.trend_gas || 'Stable';
-                const gasIcon = document.getElementById('trend_gas_icon');
-                const trendAlert = document.getElementById('trend-alert');
-                if (trendGas.includes('Rising Rapidly')) { gasIcon.innerText = '📈🔴'; trendAlert.style.display = 'block'; trendAlert.innerText = `Gas ${trendGas}!`; }
-                else if (trendGas.includes('Rising Slowly')) { gasIcon.innerText = '📈🟡'; trendAlert.style.display = 'none'; }
-                else { gasIcon.innerText = '➡️⚪'; trendAlert.style.display = 'none'; }
-
-                const tempIcon = document.getElementById('trend_temp_icon');
-                if (trendGas.includes('Rising')) tempIcon.innerText = '📈';
-                else if (trendGas.includes('Falling')) tempIcon.innerText = '📉';
-                else tempIcon.innerText = '➡️';
-
-                const confidence = data.confidence || 0;
-                const anomalyType = data.anomaly_type || 'None';
-                const badge = document.getElementById('status-badge');
-                const diagCard = document.getElementById('diagnosis-card');
-                const severityClasses = ['severity-normal', 'severity-moderate', 'severity-high', 'severity-critical'];
-                badge.classList.remove(...severityClasses);
-                diagCard.classList.remove(...severityClasses);
-
-                if (anomalyType !== 'None' && confidence > 0) {
-                    let sev = confidence >= 0.8 ? 'severity-critical' : confidence >= 0.6 ? 'severity-high' : 'severity-moderate';
-                    let label = confidence >= 0.8 ? 'CRITICAL' : confidence >= 0.6 ? 'HIGH' : 'MODERATE';
-                    badge.classList.add(sev); diagCard.classList.add(sev);
-                    badge.innerText = `${label} (${(confidence * 100).toFixed(0)}%)`;
-                    document.getElementById('anomaly-type').innerText = `!${anomalyType} Detected`;
-                    document.getElementById('qwen-diagnosis').innerText = data.qwen_diagnosis || 'Analysing...';
-                } else {
-                    badge.classList.add('severity-normal'); diagCard.classList.add('severity-normal');
-                    badge.innerText = 'NORMAL (0%)';
-                    document.getElementById('anomaly-type').innerText = 'No Anomalies Detected';
-                    document.getElementById('qwen-diagnosis').innerText = 'Environment stable.';
+                if(!res.ok){
+                    throw new Error('Network response was not ok');
                 }
-            } catch (error) { console.error('Dashboard error:', error); }
-        }
-
-        // 2. HISTORICAL CHART UPDATE
-        async function updateChart() {
-            try {
-                const res = await fetch(`${API_URL}/api/history`);
                 const data = await res.json();
-                if (data.status === 'success' && data.history) {
-                    const labels = data.history.map(h => new Date(h.t * 1000).toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
-                    const gasData = data.history.map(h => Math.round(h.gas / 1000));
-                    const tempData = data.history.map(h => h.temp);
-                    const humData = data.history.map(h => h.hum);
-
-                    if (!historyChart) {
-                        const ctx = document.getElementById('historyChart').getContext('2d');
-                        historyChart = new Chart(ctx, {
-                            type: 'line',
-                            data: { labels: labels, datasets: [
-                                { label: 'Gas (kΩ)', data: gasData, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.3, yAxisID: 'y' },
-                                { label: 'Temp (°C)', data: tempData, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.3, yAxisID: 'y1' },
-                                { label: 'Humidity (%)', data: humData, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', tension: 0.3, yAxisID: 'y1' }
-                            ]},
-                            options: {
-                                responsive: true,
-                                plugins: { legend: { labels: { color: '#e2e8f0' } } },
-                                scales: {
-                                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Gas (kΩ)', color: '#f59e0b' }, ticks: { color: '#f59e0b' }, grid: { color: '#334155' } },
-                                    y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Temp/Hum', color: '#38bdf8' }, ticks: { color: '#38bdf8' }, grid: { drawOnChartArea: false } }
-                                }
-                            }
-                        });
-                    } else {
-                        historyChart.data.labels = labels;
-                        historyChart.data.datasets[0].data = gasData;
-                        historyChart.data.datasets[1].data = tempData;
-                        historyChart.data.datasets[2].data = humData;
-                        historyChart.update();
-                    }
-                }
-            } catch (e) { console.error("Chart error:", e); }
-        }
-
-        // 3. AUDIT TRAIL UPDATE
-        async function updateAuditTrail() {
-            try {
-                const res = await fetch(`${API_URL}/api/audit-trail`);
-                const data = await res.json();
-                const container = document.getElementById('audit-trail-container');
-                if (data.status === 'success' && data.trail && data.trail.length > 0) {
-                    container.innerHTML = data.trail.map(item => {
-                        const date = new Date(item.timestamp * 1000).toLocaleString('en-GB');
-                        const sevColor = item.confidence >= 0.8 ? '#ef4444' : (item.confidence >= 0.5 ? '#f59e0b' : '#38bdf8');
-                        return `
-                            <div style="border-left: 3px solid ${sevColor}; padding: 10px; margin-bottom: 10px; background: #0f172a; border-radius: 0 8px 8px 0;">
-                                <div style="display: flex; justify-content: space-between; color: #94a3b8; font-size: 0.85em;">
-                                    <span>${date}</span>
-                                    <span style="color: ${sevColor}; font-weight: bold;">${(item.confidence * 100).toFixed(0)}% Confidence</span>
-                                </div>
-                                <div style="font-weight: bold; color: #e2e8f0; margin: 5px 0;">!${item.anomaly_type || 'Unknown'}</div>
-                                <div style="font-style: italic; color: #cbd5e1; font-size: 0.9em;">${item.qwen_diagnosis || 'No diagnosis available.'}</div>
-                            </div>
-                        `;
-                    }).join('');
-                } else {
-                    container.innerHTML = '<p style="color: #94a3b8;">No anomalies recorded in OSS yet. Trigger an event to see the audit trail!</p>';
-                }
-            } catch (e) {
-                document.getElementById('audit-trail-container').innerHTML = '<p style="color: #ef4444;">Failed to load audit trail from OSS.</p>';
+                updateSensorDisplay(data);
+            }
+            catch(error){
+                console.error('Error fetching sensor data:', error);
+                document.getElementById('lastUpdate').innerText = 'Connection Error';
             }
         }
 
-        // 4. ML & CHAT (Unchanged)
-        async function updateMLInsights() {
+        async function fetchAuditTrail(){
+            try{
+                const res = await fetch(`${API_URL}/api/audit-trail`);
+                if(!res.ok){
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await res.json();
+                displayAuditTrail(data.trail || []);
+            }
+            catch(error){
+                console.error('Error fetching audit trail:', error);
+                document.getElementById('auditTrail').innerHTML = '<div class="no-data">Failed to load audit trail.</div>';
+            }
+        }
+
+        async function fetchMLInsights(){
             try{
                 const res = await fetch(`${API_URL}/api/ml-insights`);
+                if(!res.ok){
+                    throw new Error('Network response was not ok');
+                }
                 const data = await res.json();
-                if (data.status === 'success' && data.insight) {
-                    const insight = typeof data.insight === 'string' ? JSON.parse(data.insight) : data.insight;
-                    document.getElementById('ml-pattern').innerText = insight.pattern || "Analysing...";
-                    const predEl = document.getElementById('ml-prediction');
-                    predEl.innerText = insight.prediction || "Low";
-                    predEl.style.color = insight.prediction && insight.prediction.includes("High") ? "#ef4444" : (insight.prediction && insight.prediction.includes("Medium") ? "#f59e0b" : "#10b981");
-                    document.getElementById('ml-recommendation').innerText = insight.recommendation || "Waiting...";
+                if(data.insight){
+                    document.getElementById('mlPattern').innerText = data.insight.pattern || 'Analysing...';
+                    document.getElementById('mlPrediction').innerText = data.insight.prediction || 'Calculating...';
+                    document.getElementById('mlRecommendation').innerText = data.insight.recommendation || 'Waiting...';
                 }
             }
             catch(error){
-                console.error("ML error:", error);
+                console.error('Error fetching ML insights:', error);
             }
         }
 
-        async function askQwen() {
-            const input = document.getElementById('chat-input');
-            const responseDiv = document.getElementById('chat-response');
-            const btn = document.getElementById('chat-btn');
+        function updateSensorDisplay(data){
+            document.getElementById('tempPrimary').innerText = data.sensors?.temp_p ? data.sensors.temp_p.toFixed(1) : '--';
+            document.getElementById('humPrimary').innerText = data.sensors?.hum_p ? data.sensors.hum_p.toFixed(1) : '--';
+            document.getElementById('gasPrimary').innerText = data.sensors?.gas_p ? Math.round(data.sensors.gas_p / 1000) : '--';
+            document.getElementById('tempSecondary').innerText = data.sensors?.temp_s ? data.sensors.temp_s.toFixed(1) : '--';
+            document.getElementById('humSecondary').innerText = data.sensors?.hum_s ? data.sensors.hum_s.toFixed(1) : '--';
+            document.getElementById('gasSecondary').innerText = data.sensors?.gas_s ? Math.round(data.sensors.gas_s / 1000) : '--';
+            document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString();
+
+            const gasTrend = data.trend_gas || 'Stable';
+            const tempTrend = data.trend_temp || 'Stable';
+            document.getElementById('gasTrendPrimary').innerText = getTrendArrow(gasTrend);
+            document.getElementById('tempTrendPrimary').innerText = getTrendArrow(tempTrend);
+
+            const alertDiv = document.getElementById('alertPrimary');
+            if(gasTrend.includes('Rising Rapidly')){
+                alertDiv.style.display = 'block';
+                alertDiv.innerText = `Predictive Alert: Gas ${gasTrend}!`;
+            }
+            else{
+                alertDiv.style.display = 'none';
+            }
+
+            const aiDiagnosisDiv = document.getElementById('aiDiagnosis');
+            if(data.anomaly_type && data.anomaly_type !== 'None'){
+                aiDiagnosisDiv.innerHTML = `<div style="color: #ef4444; font-weight: bold; margin-bottom: 10px;"> ${data.anomaly_type} Detected</div><p>${data.qwen_diagnosis || 'Analysing...'}</p>`;
+            }
+            else{
+                aiDiagnosisDiv.innerHTML = `<div style="color: #10b981; font-weight: bold; margin-bottom: 10px;">No Anomalies Detected</div><p>Environment stable.</p>`;
+            }
+
+            const statusIndicator = document.querySelector('#systemStatus .status-indicator');
+            if(data.anomaly_type && data.anomaly_type !== 'None'){
+                const conf = data.confidence || 0;
+                let severityClass = 'status-normal';
+                let label = 'NORMAL';
+                if(conf >= 0.8){ 
+                    severityClass = 'status-critical';
+                    label = 'CRITICAL'; 
+                }
+
+                else if(conf >= 0.6){ 
+                    severityClass = 'status-critical'; 
+                    label = 'HIGH';
+                }
+
+                else if(conf >= 0.3){
+                    severityClass = 'status-warning'; 
+                    label = 'MODERATE'; 
+                }
+
+                statusIndicator.className = `status-indicator ${severityClass}`;
+                statusIndicator.innerText = `${label} (${(conf * 100).toFixed(0)}%)`;
+            }
+            else{
+                statusIndicator.className = 'status-indicator status-normal';
+                statusIndicator.innerText = 'NORMAL (0%)';
+            }
+        }
+
+        function getTrendArrow(trend){
+            if(trend.includes('Rising Rapidly')){
+                return '📈🔴';
+            }
+            if(trend.includes('Rising Slowly')){
+                return '📈🟡';
+            }
+            if(trend.includes('Falling')){
+                return '📉';
+            }
+            return '➡️';
+        }
+
+        function displayAuditTrail(anomalies){
+            const container = document.getElementById('auditTrail');
+            if(!anomalies || anomalies.length === 0){
+                container.innerHTML = '<div class="no-data">No anomalies recorded in OSS yet. Trigger an event to see the audit trail!</div>';
+                return;
+            }
+            container.innerHTML = anomalies.map(a =>{
+                let severityClass = 'moderate';
+                if(a.confidence >= 0.8){
+                    severityClass = 'critical';
+                }
+
+                else if(a.confidence >= 0.6){
+                    severityClass = 'high';
+                }
+
+                const date = new Date(a.timestamp * 1000).toLocaleString();
+
+                return `
+                    <div class="audit-item ${severityClass}">
+                        <div class="audit-time">${date}</div>
+                        <div class="audit-type">⚠️ ${a.anomaly_type || 'Unknown'}</div>
+                        <div class="audit-confidence">Confidence: ${(a.confidence * 100).toFixed(0)}%</div>
+                        <div style="margin-top: 8px; font-size: 0.9em; color: #cbd5e1;">${a.qwen_diagnosis || 'No diagnosis available.'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function askQwen(){
+            const input = document.getElementById('chatInput');
+            const btn = document.getElementById('chatBtn');
+            const responseDiv = document.getElementById('chatResponse');
             const question = input.value.trim();
-            if (!question) return;
-            responseDiv.innerText = "Qwen is thinking...";
-            responseDiv.style.borderLeftColor = "#f59e0b";
-            input.value = ""; btn.innerText = "..."; btn.disabled = true;
-            try{
-                const res = await fetch(`${API_URL}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: question }) });
-                const data = await res.json();
-                responseDiv.innerText = data.status === 'success' ? data.response : "Error: " + data.message;
-                responseDiv.style.borderLeftColor = data.status === 'success' ? "#38bdf8" : "#ef4444";
+            if(!question){
+                return;
             }
-            catch(error){
-                responseDiv.innerText = "Connection Failed."; responseDiv.style.borderLeftColor = "#ef4444";
 
-            }
+            responseDiv.innerText = 'Qwen is thinking...';
+            input.value = '';
+            btn.disabled = true;
+
+            try{
+                const res = await fetch(`${API_URL}/api/chat`,{
+                    method: 'POST',
+                    headers:{ 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: question })
+                });
+                const data = await res.json();
+                responseDiv.innerText = data.response || 'No response received.';
+            } 
+            catch(error){
+                responseDiv.innerText = 'Connection failed. Please try again.';
+            } 
             finally{
-                btn.innerText = "Ask"; btn.disabled = false;
+                btn.disabled = false;
             }
         }
-        document.getElementById('chat-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') askQwen(); });
 
-        updateDashboard();
+        document.getElementById('chatInput').addEventListener('keypress', function (e){
+            if(e.key === 'Enter'){
+                askQwen();
+            }
+        });
+
+        // Initialize Chart
+        function initChart() {
+            const ctx = document.getElementById('telemetryChart').getContext('2d');
+            chartInstance = new Chart(ctx,{
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Gas (kΩ)', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.3, yAxisID: 'y' },
+                        { label: 'Temp (°C)', data: [], borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.3, yAxisID: 'y1' },
+                        { label: 'Humidity (%)', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', tension: 0.3, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#e2e8f0' } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Gas (kΩ)', color: '#f59e0b' }, ticks: { color: '#f59e0b' }, grid: { color: '#334155' } },
+                        y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Temp/Hum', color: '#38bdf8' }, ticks: { color: '#38bdf8' }, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        }
+
+        async function updateChart(){
+            try{
+                const res = await fetch(`${API_URL}/api/history`);
+                if(!res.ok){ 
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await res.json();
+                if(data.history && chartInstance){
+                    chartInstance.data.labels = data.history.map(h => new Date(h.t * 1000).toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
+                    chartInstance.data.datasets[0].data = data.history.map(h => Math.round(h.gas / 1000));
+                    chartInstance.data.datasets[1].data = data.history.map(h => h.temp);
+                    chartInstance.data.datasets[2].data = data.history.map(h => h.hum);
+                    chartInstance.update();
+                }
+            } 
+            catch(error){
+                console.error('Error fetching chart data:', error);
+            }
+        }
+
+        // Initialize and set intervals
+        initChart();
+        fetchSensorData();
+        fetchAuditTrail();
+        fetchMLInsights();
         updateChart();
-        updateAuditTrail();
-        updateMLInsights();
 
-        setInterval(updateDashboard, 3000);
+        setInterval(fetchSensorData, 3000);
+        setInterval(fetchAuditTrail, 30000);
+        setInterval(fetchMLInsights, 15000);
         setInterval(updateChart, 10000);
-        setInterval(updateAuditTrail, 30000);
-        setInterval(updateMLInsights, 15000);
     </script>
 </body>
 </html>
