@@ -1,0 +1,161 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 20px;
+}
+
+h1 {
+    color: #38bdf8;
+    margin: 0;
+    font-size: 2.5em;
+}
+
+.subtitle {
+    color: #94a3b8;
+    font-size: 0.9em;
+}
+
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background-color: #1e293b;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.card h2 {
+    color: #38bdf8;
+    margin-top: 0;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 10px;
+    font-size: 1.2em;
+}
+
+.status-normal { color: #4ade80; }
+.status-warning { color: #fbbf24; }
+.status-critical { color: #f87171; }
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.data-label { color: #94a3b8; }
+.data-value { font-weight: bold; }
+
+.trend-up { color: #f87171; }
+.trend-down { color: #38bdf8; }
+.trend-stable { color: #94a3b8; }
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#chat-history {
+    height: 200px;
+    overflow-y: auto;
+    background-color: #0f172a;
+    border-radius: 5px;
+    padding: 10px;
+    border: 1px solid #334155;
+}
+
+.chat-message {
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+.user-msg { background-color: #334155; text-align: right; }
+.ai-msg { background-color: #1e293b; border: 1px solid #334155; }
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+input[type="text"] {
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #334155;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    background-color: #38bdf8;
+    color: #0f172a;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover { background-color: #7dd3fc; }
+
+.audit-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.audit-item {
+    background-color: #0f172a;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #f87171;
+}
+
+.audit-time { font-size: 0.8em; color: #94a3b8; }
+
+
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+    }
+}
