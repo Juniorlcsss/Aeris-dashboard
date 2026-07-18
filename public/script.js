@@ -41,6 +41,14 @@ async function fetchLatestData() {
             statusEl.innerText = 'NORMAL (0%)';
             statusEl.className = 'status-normal';
         }
+
+        if(data.timestamp && data.timestamp > 0){
+            const date=new Date(data.timestamp * 1000);
+            document.getElementById('last-update').innerText = date.toLocaleTimeString('en-GB', { timeZone:'Europe/London',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        }
+        else{
+            document.getElementById('last-update').innerText = 'N/A';
+        }
         document.getElementById('last-update').innerText = new Date(data.timestamp * 1000).toLocaleTimeString();
 
         // Update Sensors
@@ -57,18 +65,27 @@ async function fetchLatestData() {
         document.getElementById('diagnosis-text').innerText = data.qwen_diagnosis || 'Environment stable.';
 
         // Update Chart
-        const timeLabel = new Date(data.timestamp * 1000).toLocaleTimeString();
-        if(telemetryChart.data.labels.length > 30){
-            telemetryChart.data.labels.shift();
-            telemetryChart.data.datasets[0].data.shift();
-            telemetryChart.data.datasets[1].data.shift();
-            telemetryChart.data.datasets[2].data.shift();
+        if(data.timestamp && data.timestamp > 0 && data.sensors){
+            const date = new Date(data.timestamp * 1000);
+            const timeLabel =date.toLocaleTimeString('en-GB', { timeZone:'Europe/London',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+            
+            const lastLabel = telemetryChart.data.labels[telemetryChart.data.labels.length - 1];
+            if(lastLabel !== timeLabel){
+                if(telemetryChart.data.labels.length > 30){
+                    telemetryChart.data.labels.shift();
+                    telemetryChart.data.datasets[0].data.shift();
+                    telemetryChart.data.datasets[1].data.shift();
+                    telemetryChart.data.datasets[2].data.shift();
+                }
+                
+                telemetryChart.data.labels.push(timeLabel);
+                telemetryChart.data.datasets[0].data.push(data.sensors?.gas_p ? (data.sensors.gas_p / 1000).toFixed(1) : null);
+                telemetryChart.data.datasets[1].data.push(data.sensors?.temp_p || null);
+                telemetryChart.data.datasets[2].data.push(data.sensors?.hum_p || null);
+                telemetryChart.update('none');
+            }
         }
-        telemetryChart.data.labels.push(timeLabel);
-        telemetryChart.data.datasets[0].data.push(data.sensors?.gas_p ? (data.sensors.gas_p / 1000).toFixed(1) : 0);
-        telemetryChart.data.datasets[1].data.push(data.sensors?.temp_p || 0);
-        telemetryChart.data.datasets[2].data.push(data.sensors?.hum_p || 0);
-        telemetryChart.update();
 
     }
     catch(error){
@@ -80,21 +97,55 @@ async function fetchLatestData() {
 async function fetchAuditTrail() {
     try{
         const response = await fetch(`${API_BASE_URL}/api/audit-trail`);
-        if (!response.ok) throw new Error('Network response was not ok');
+        if(!response.ok){
+            throw new Error('Network response was not ok');
+        }
+
         const data = await response.json();
-        
+
         const auditList = document.getElementById('audit-list');
-        auditList.innerHTML = ''; 
+        auditList.innerHTML = '';
         
         if(data.trail && data.trail.length > 0){
-            data.trail.forEach(item => {
+            const validEntries = data.trail.filter(item => {
+                return item && item.timestamp && item.timestamp > 0;
+            });
+            
+            if(validEntries.length === 0){
+                auditList.innerHTML = '<li class="audit-item">No recent anomalies recorded.</li>';
+                return;
+            }
+            
+            validEntries.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'audit-item';
-                const time = new Date(item.timestamp * 1000).toLocaleString();
+                
+                let timeStr = 'Invalid date';
+                if(item.timestamp && item.timestamp > 0){
+                    const date = new Date(item.timestamp * 1000);
+                    timeStr = date.toLocaleString('en-GB', { 
+                        timeZone: 'Europe/London',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    });
+                }
+            
+                let confidenceStr = 'N/A';
+                if(item.anomaly_confidence !== null && item.anomaly_confidence !== undefined && !isNaN(item.anomaly_confidence)){
+                    confidenceStr = `${(item.anomaly_confidence * 100).toFixed(0)}%`;
+                }
+                
+                const diagnosis = item.qwen_response || item.diagnosis || 'No AI diagnosis available.';
+                
                 li.innerHTML = `
-                    <div class="audit-time">${time}</div>
-                    <div><strong>${item.anomaly_type}</strong> (Confidence: ${(item.anomaly_confidence * 100).toFixed(0)}%)</div>
-                    <div style="font-size: 0.9em; margin-top: 5px;">${item.qwen_response || 'No AI diagnosis available.'}</div>
+                    <div class="audit-time">${timeStr}</div>
+                    <div><strong>${item.anomaly_type || 'Unknown'}</strong> (Confidence: ${confidenceStr})</div>
+                    <div style="font-size: 0.9em; margin-top: 5px;">${diagnosis}</div>
                 `;
                 auditList.appendChild(li);
             });
@@ -105,8 +156,10 @@ async function fetchAuditTrail() {
     }
     catch (error){
         console.error('Error fetching audit trail:', error);
+        document.getElementById('audit-list').innerHTML = '<li class="audit-item">Error loading audit trail.</li>';
     }
 }
+
 
 // --- 4. Ask Qwen Chat Logic ---
 async function askQwen(){
