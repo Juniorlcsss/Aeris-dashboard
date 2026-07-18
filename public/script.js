@@ -108,7 +108,50 @@ async function fetchAuditTrail() {
     }
 }
 
-// --- 4. Anomaly Simulator Logic ---
+// --- 4. Ask Qwen Chat Logic ---
+async function askQwen(){
+    const input = document.getElementById('chatInput');
+    const responseDiv = document.getElementById('chatResponse');
+    const btn = document.getElementById('chatBtn');
+
+    const question = input.value.trim();
+    if(!question){
+        return;
+    }
+
+    responseDiv.innerText = "Thinking...";
+    responseDiv.style.color = "#94a3b8";
+    btn.disabled = true;
+
+    try{
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+        });
+
+        const data = await response.json();
+
+        if(data.status === 'success') {
+            responseDiv.innerText = data.response;
+            responseDiv.style.color = "#e2e8f0";
+        }
+        else{
+            responseDiv.innerText = "Error: " + (data.message || "Unknown error");
+            responseDiv.style.color = "#f87171";
+        }
+    }
+    catch(error){
+        responseDiv.innerText = "Network error: " + error.message;
+        responseDiv.style.color = "#f87171";
+    }
+    finally{
+        btn.disabled = false;
+        input.value = '';
+    }
+}
+
+// --- 5. Anomaly Simulator Logic ---
 document.getElementById('simulate-ai-btn').addEventListener('click', async () =>{
     const resultDiv = document.getElementById('ai-diagnosis-result');
     const btn = document.getElementById('simulate-ai-btn');
@@ -152,6 +195,16 @@ document.getElementById('simulate-ai-btn').addEventListener('click', async () =>
     finally{
         btn.disabled = false;
         btn.innerText = "Get AI Diagnosis";
+    }
+});
+
+// --- 6. Quick Simulate Shortcut ---
+// Scrolls down to the Anomaly Simulator card and focuses the AI diagnosis button.
+document.getElementById('simulate-btn').addEventListener('click', () => {
+    const simBtn = document.getElementById('simulate-ai-btn');
+    if(simBtn){
+        simBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        simBtn.focus();
     }
 });
 

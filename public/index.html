@@ -17,10 +17,10 @@
             <!-- System Status -->
             <div class="card">
                 <h2>System Status</h2>
-                <div id="systemStatus">
+                <div id="system-status">
                     <span class="status-indicator status-normal">NORMAL (0%)</span>
                 </div>
-                <p style="margin-top: 15px; color: #94a3b8;">Last Update: <span id="lastUpdate">--</span></p>
+                <p style="margin-top: 15px; color: #94a3b8;">Last Update: <span id="last-update">--</span></p>
 
                 <button id="simulate-btn" style="background-color: #ef4444; color: white; width: 100%; margin-top: 15px; padding: 12px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
                     SIMULATE
@@ -30,26 +30,26 @@
             <!-- Primary Sensor -->
             <div class="card">
                 <h2>Primary Sensor (0x76)</h2>
-                <div class="reading-value"><span id="tempPrimary">--</span>°C <span id="tempTrendPrimary" style="font-size: 0.5em;">➡️</span></div>
-                <div class="sensor-row"><span>Humidity:</span> <span id="humPrimary">--</span>%</div>
-                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gasPrimary">--</span> kΩ <span id="gasTrendPrimary" style="font-size: 1.2em;">➡️</span></div>
+                <div class="reading-value"><span id="temp-p">--</span>°C <span id="tempTrendPrimary" style="font-size: 0.5em;">➡️</span></div>
+                <div class="sensor-row"><span>Humidity:</span> <span id="hum-p">--</span>%</div>
+                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gas-p">--</span> kΩ <span id="gasTrendPrimary" style="font-size: 1.2em;">➡️</span></div>
                 <div id="alertPrimary" style="display:none; color: #ef4444; font-weight: bold; margin-top: 10px;">️ Predictive Alert!</div>
             </div>
 
             <!-- Secondary Sensor -->
             <div class="card">
                 <h2>Secondary Sensor (0x77)</h2>
-                <div class="reading-value"><span id="tempSecondary">--</span>°C</div>
-                <div class="sensor-row"><span>Humidity:</span> <span id="humSecondary">--</span>%</div>
-                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gasSecondary">--</span> kΩ</div>
+                <div class="reading-value"><span id="temp-s">--</span>°C</div>
+                <div class="sensor-row"><span>Humidity:</span> <span id="hum-s">--</span>%</div>
+                <div class="sensor-row"><span>Gas Resistance:</span> <span id="gas-s">--</span> kΩ</div>
             </div>
 
             <!-- Qwen AI Diagnosis -->
             <div class="card" style="grid-column: 1 / -1;">
                 <h2>Qwen AI Diagnosis</h2>
                 <div id="aiDiagnosis">
-                    <div style="color: #10b981; font-weight: bold; margin-bottom: 10px;">No Anomalies Detected</div>
-                    <p>Environment stable. All sensor readings within normal parameters.</p>
+                    <div id="anomaly-type" style="color: #10b981; font-weight: bold; margin-bottom: 10px;">No Anomalies Detected</div>
+                    <p id="diagnosis-text">Environment stable. All sensor readings within normal parameters.</p>
                 </div>
             </div>
 
@@ -63,7 +63,9 @@
             <div class="card" style="grid-column: 1 / -1;">
                 <h2>Incident Audit Trail</h2>
                 <div id="auditTrail">
-                    <div class="no-data">Loading recent anomalies from cloud storage...</div>
+                    <ul id="audit-list" class="audit-list">
+                        <li class="no-data">Loading recent anomalies from cloud storage...</li>
+                    </ul>
                 </div>
             </div>
 
