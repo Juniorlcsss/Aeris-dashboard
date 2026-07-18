@@ -41,34 +41,36 @@ async function fetchLatestData() {
             statusEl.innerText = 'NORMAL (0%)';
             statusEl.className = 'status-normal';
         }
+        let lastUpdateTime = '--';
 
-        if(data.timestamp && data.timestamp > 0){
-            const date=new Date(data.timestamp * 1000);
-            document.getElementById('last-update').innerText = date.toLocaleTimeString('en-GB', { timeZone:'Europe/London',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        if(data.timestamp && data.timestamp > 1000000000){
+            const date = new Date(data.timestamp * 1000);
+            lastUpdateTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
-        else{
-            document.getElementById('last-update').innerText = 'N/A';
-        }
-        document.getElementById('last-update').innerText = new Date(data.timestamp * 1000).toLocaleTimeString();
+
+        document.getElementById('last-update').innerText = lastUpdateTime;
 
         // Update Sensors
-        document.getElementById('temp-p').innerText = `${data.sensors?.temp_p || '--'}°C`;
-        document.getElementById('hum-p').innerText = `${data.sensors?.hum_p || '--'}%`;
-        document.getElementById('gas-p').innerText = `${data.sensors?.gas_p ? (data.sensors.gas_p / 1000).toFixed(1) : '--'} kΩ`;
+        document.getElementById('temp-p').innerText = data.sensors?.temp_p?.toFixed(1) || '--';
+        document.getElementById('hum-p').innerText = data.sensors?.hum_p?.toFixed(0) || '--';
+        document.getElementById('gas-p').innerText = data.sensors?.gas_p ? (data.sensors.gas_p / 1000).toFixed(1) : '--';
         
-        document.getElementById('temp-s').innerText = `${data.sensors?.temp_s || '--'}°C`;
-        document.getElementById('hum-s').innerText = `${data.sensors?.hum_s || '--'}%`;
-        document.getElementById('gas-s').innerText = `${data.sensors?.gas_s ? (data.sensors.gas_s / 1000).toFixed(1) : '--'} kΩ`;
+        document.getElementById('temp-s').innerText = data.sensors?.temp_s?.toFixed(1) || '--';
+        document.getElementById('hum-s').innerText = data.sensors?.hum_s?.toFixed(0) || '--';
+        document.getElementById('gas-s').innerText = data.sensors?.gas_s ? (data.sensors.gas_s / 1000).toFixed(1) : '--';
 
         // Update Diagnosis
-        document.getElementById('anomaly-type').innerText = data.anomaly_type || 'No Anomalies Detected';
+        const anomalyType = data.anomaly_type || 'None';
+        document.getElementById('anomaly-type').innerText = anomalyType === 'None' ? 'No Anomalies Detected' : anomalyType;
         document.getElementById('diagnosis-text').innerText = data.qwen_diagnosis || 'Environment stable.';
 
         // Update Chart
-        if(data.timestamp && data.timestamp > 0 && data.sensors){
+        if (data.timestamp && data.timestamp > 1000000000 && data.sensors) {
             const date = new Date(data.timestamp * 1000);
-            const timeLabel =date.toLocaleTimeString('en-GB', { timeZone:'Europe/London',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-
+            const timeLabel = date.toLocaleTimeString('en-GB', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
             
             const lastLabel = telemetryChart.data.labels[telemetryChart.data.labels.length - 1];
             if(lastLabel !== timeLabel){
@@ -86,7 +88,6 @@ async function fetchLatestData() {
                 telemetryChart.update('none');
             }
         }
-
     }
     catch(error){
         console.error('Error fetching latest data:', error);
@@ -104,11 +105,11 @@ async function fetchAuditTrail() {
         const data = await response.json();
 
         const auditList = document.getElementById('audit-list');
-        auditList.innerHTML = '';
+        auditList.innerHTML = ''; 
         
         if(data.trail && data.trail.length > 0){
             const validEntries = data.trail.filter(item => {
-                return item && item.timestamp && item.timestamp > 0;
+                return item && item.timestamp && item.timestamp > 1000000000;
             });
             
             if(validEntries.length === 0){
@@ -121,10 +122,9 @@ async function fetchAuditTrail() {
                 li.className = 'audit-item';
                 
                 let timeStr = 'Invalid date';
-                if(item.timestamp && item.timestamp > 0){
+                if(item.timestamp && item.timestamp > 1000000000){
                     const date = new Date(item.timestamp * 1000);
                     timeStr = date.toLocaleString('en-GB', { 
-                        timeZone: 'Europe/London',
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric',
@@ -134,7 +134,6 @@ async function fetchAuditTrail() {
                         hour12: false
                     });
                 }
-            
                 let confidenceStr = 'N/A';
                 if(item.anomaly_confidence !== null && item.anomaly_confidence !== undefined && !isNaN(item.anomaly_confidence)){
                     confidenceStr = `${(item.anomaly_confidence * 100).toFixed(0)}%`;
@@ -156,18 +155,16 @@ async function fetchAuditTrail() {
     }
     catch (error){
         console.error('Error fetching audit trail:', error);
-        document.getElementById('audit-list').innerHTML = '<li class="audit-item">Error loading audit trail.</li>';
     }
 }
-
 
 // --- 4. Ask Qwen Chat Logic ---
 async function askQwen(){
     const input = document.getElementById('chatInput');
     const responseDiv = document.getElementById('chatResponse');
     const btn = document.getElementById('chatBtn');
-
     const question = input.value.trim();
+    
     if(!question){
         return;
     }
@@ -182,7 +179,6 @@ async function askQwen(){
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question })
         });
-
         const data = await response.json();
 
         if(data.status === 'success') {
@@ -205,7 +201,7 @@ async function askQwen(){
 }
 
 // --- 5. Anomaly Simulator Logic ---
-document.getElementById('simulate-ai-btn').addEventListener('click', async () =>{
+document.getElementById('simulate-ai-btn').addEventListener('click', async () => {
     const resultDiv = document.getElementById('ai-diagnosis-result');
     const btn = document.getElementById('simulate-ai-btn');
     
@@ -213,7 +209,7 @@ document.getElementById('simulate-ai-btn').addEventListener('click', async () =>
     resultDiv.style.color = "#94a3b8";
     btn.disabled = true;
     btn.innerText = "Thinking...";
-
+    
     const payload = {
         temp_p: parseFloat(document.getElementById('sim-temp-p').value),
         hum_p: parseFloat(document.getElementById('sim-hum-p').value),
@@ -222,47 +218,42 @@ document.getElementById('simulate-ai-btn').addEventListener('click', async () =>
         hum_s: parseFloat(document.getElementById('sim-hum-s').value),
         gas_s: parseFloat(document.getElementById('sim-gas-s').value)
     };
-
-    try{
-        const response = await fetch(`${API_BASE_URL}/api/simulate-diagnosis`,{
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/simulate-diagnosis`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
         const data = await response.json();
-
-        if(data.status === 'success'){
+        
+        if (data.status === 'success') {
             resultDiv.innerText = data.diagnosis;
             resultDiv.style.color = "#4ade80";
-        }
-        else{
+        } else {
             resultDiv.innerText = "Error: " + (data.message || "Unknown error");
             resultDiv.style.color = "#f87171";
         }
-    }
-    catch(error){
+    } catch (error) {
         resultDiv.innerText = "Network error: " + error.message;
         resultDiv.style.color = "#f87171";
-    }
-    finally{
+    } finally {
         btn.disabled = false;
         btn.innerText = "Get AI Diagnosis";
     }
 });
 
 // --- 6. Quick Simulate Shortcut ---
-// Scrolls down to the Anomaly Simulator card and focuses the AI diagnosis button.
 document.getElementById('simulate-btn').addEventListener('click', () => {
     const simBtn = document.getElementById('simulate-ai-btn');
-    if(simBtn){
+    if (simBtn) {
         simBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
         simBtn.focus();
     }
 });
 
-// --- 5. Auto-Refresh ---
+// --- 7. Auto-Refresh ---
 fetchLatestData();
 fetchAuditTrail();
-setInterval(fetchLatestData, 5000);  // Refresh chart/sensors every 5 seconds
-setInterval(fetchAuditTrail, 15000); // Refresh audit trail every 15 seconds
+setInterval(fetchLatestData, 5000);
+setInterval(fetchAuditTrail, 15000);
