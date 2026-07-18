@@ -21,6 +21,10 @@
                     <span class="status-indicator status-normal">NORMAL (0%)</span>
                 </div>
                 <p style="margin-top: 15px; color: #94a3b8;">Last Update: <span id="lastUpdate">--</span></p>
+
+                <button id="simulate-btn" style="background-color: #ef4444; color: white; width: 100%; margin-top: 15px; padding: 12px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
+                    SIMULATE
+                </button>
             </div>
 
             <!-- Primary Sensor -->
@@ -82,6 +86,44 @@
                 </div>
             </div>
 
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Anomaly Simulator</h2>
+                <p style="color: #94a3b8; font-size: 0.9em; margin-bottom: 15px;">Adjust sensor values below to test the AI's diagnostic capabilities in real-time.</p>
+                
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div>
+                        <label for="sim-temp-p" style="color: #94a3b8; font-size: 0.8em; display: block; margin-bottom: 5px;">Primary Temp (°C)</label>
+                        <input type="number" id="sim-temp-p" value="20.0" step="0.1" class="sim-input">
+                    </div>
+                    <div>
+                        <label for="sim-hum-p" style="color: #94a3b8; font-size: 0.8em; display: block; margin-bottom: 5px;">Primary Hum (%)</label>
+                        <input type="number" id="sim-hum-p" value="50.0" step="0.1" class="sim-input">
+                    </div>
+                    <div>
+                        <label for="sim-gas-p" style="color: #94a3b8; font-size: 0.8em; display: block; margin-bottom: 5px;">Primary Gas (Ω)</label>
+                        <input type="number" id="sim-gas-p" value="150000" step="1000" class="sim-input">
+                    </div>
+                    <div>
+                        <label for="sim-temp-s" style="color: #94a3b8; font-size: 0.8em; display: block; margin-bottom: 5px;">Secondary Temp (°C)</label>
+                        <input type="number" id="sim-temp-s" value="20.0" step="0.1" class="sim-input">
+                    </div>
+                    <div>
+                        <label for="sim-hum-s" style="color: #94a3b8; font-size: 0.8em; display: block; margin-bottom: 5px;">Secondary Hum (%)</label>
+                        <input type="number" id="sim-hum-s" value="50.0" step="0.1" class="sim-input">
+                    </div>
+                    <div>
+                        <label for="sim-gas-s" style="color: #94a3b8; font-size: 0.8em; display: block; margin-bottom: 5px;">Secondary Gas (Ω)</label>
+                        <input type="number" id="sim-gas-s" value="150000" step="1000" class="sim-input">
+                    </div>
+                </div>
+                
+                <button id="simulate-ai-btn" style="background-color: #8b5cf6; color: white; width: 100%; padding: 12px; font-size: 1.1em; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">Get AI Diagnosis</button>
+                
+                <div id="ai-diagnosis-result" style="margin-top: 15px; padding: 15px; background-color: #0f172a; border-radius: 5px; border: 1px solid #334155; min-height: 60px; color: #e2e8f0; line-height: 1.5;">
+                    AI diagnosis will appear here...
+                </div>
+            </div>
+
             <!-- Ask Qwen AI -->
             <div class="card" style="grid-column: 1 / -1;">
                 <h2>Ask Qwen AI</h2>
@@ -92,256 +134,9 @@
         </div>
     </div>
 
-    <!-- Chart.js -->
+    <!-- Load Chart.js from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const API_URL = 'https://aeris-dashboard-ngrzevvlaw.eu-west-1.fcapp.run';
-        let chartInstance = null;
-
-        async function fetchSensorData(){
-            try{
-                const res = await fetch(`${API_URL}/api/latest`);
-                if(!res.ok){
-                    throw new Error('Network response was not ok');
-                }
-                const data = await res.json();
-                updateSensorDisplay(data);
-            }
-            catch(error){
-                console.error('Error fetching sensor data:', error);
-                document.getElementById('lastUpdate').innerText = 'Connection Error';
-            }
-        }
-
-        async function fetchAuditTrail(){
-            try{
-                const res = await fetch(`${API_URL}/api/audit-trail`);
-                if(!res.ok){
-                    throw new Error('Network response was not ok');
-                }
-
-                const data = await res.json();
-                displayAuditTrail(data.trail || []);
-            }
-            catch(error){
-                console.error('Error fetching audit trail:', error);
-                document.getElementById('auditTrail').innerHTML = '<div class="no-data">Failed to load audit trail.</div>';
-            }
-        }
-
-        async function fetchMLInsights(){
-            try{
-                const res = await fetch(`${API_URL}/api/ml-insights`);
-                if(!res.ok){
-                    throw new Error('Network response was not ok');
-                }
-                const data = await res.json();
-                if(data.insight){
-                    document.getElementById('mlPattern').innerText = data.insight.pattern || 'Analysing...';
-                    document.getElementById('mlPrediction').innerText = data.insight.prediction || 'Calculating...';
-                    document.getElementById('mlRecommendation').innerText = data.insight.recommendation || 'Waiting...';
-                }
-            }
-            catch(error){
-                console.error('Error fetching ML insights:', error);
-            }
-        }
-
-        function updateSensorDisplay(data){
-            document.getElementById('tempPrimary').innerText = data.sensors?.temp_p ? data.sensors.temp_p.toFixed(1) : '--';
-            document.getElementById('humPrimary').innerText = data.sensors?.hum_p ? data.sensors.hum_p.toFixed(1) : '--';
-            document.getElementById('gasPrimary').innerText = data.sensors?.gas_p ? Math.round(data.sensors.gas_p / 1000) : '--';
-            document.getElementById('tempSecondary').innerText = data.sensors?.temp_s ? data.sensors.temp_s.toFixed(1) : '--';
-            document.getElementById('humSecondary').innerText = data.sensors?.hum_s ? data.sensors.hum_s.toFixed(1) : '--';
-            document.getElementById('gasSecondary').innerText = data.sensors?.gas_s ? Math.round(data.sensors.gas_s / 1000) : '--';
-            document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString();
-
-            const gasTrend = data.trend_gas || 'Stable';
-            const tempTrend = data.trend_temp || 'Stable';
-            document.getElementById('gasTrendPrimary').innerText = getTrendArrow(gasTrend);
-            document.getElementById('tempTrendPrimary').innerText = getTrendArrow(tempTrend);
-
-            const alertDiv = document.getElementById('alertPrimary');
-            if(gasTrend.includes('Rising Rapidly')){
-                alertDiv.style.display = 'block';
-                alertDiv.innerText = `Predictive Alert: Gas ${gasTrend}!`;
-            }
-            else{
-                alertDiv.style.display = 'none';
-            }
-
-            const aiDiagnosisDiv = document.getElementById('aiDiagnosis');
-            if(data.anomaly_type && data.anomaly_type !== 'None'){
-                aiDiagnosisDiv.innerHTML = `<div style="color: #ef4444; font-weight: bold; margin-bottom: 10px;"> ${data.anomaly_type} Detected</div><p>${data.qwen_diagnosis || 'Analysing...'}</p>`;
-            }
-            else{
-                aiDiagnosisDiv.innerHTML = `<div style="color: #10b981; font-weight: bold; margin-bottom: 10px;">No Anomalies Detected</div><p>Environment stable.</p>`;
-            }
-
-            const statusIndicator = document.querySelector('#systemStatus .status-indicator');
-            if(data.anomaly_type && data.anomaly_type !== 'None'){
-                const conf = data.confidence || 0;
-                let severityClass = 'status-normal';
-                let label = 'NORMAL';
-                if(conf >= 0.8){ 
-                    severityClass = 'status-critical';
-                    label = 'CRITICAL'; 
-                }
-
-                else if(conf >= 0.6){ 
-                    severityClass = 'status-critical'; 
-                    label = 'HIGH';
-                }
-
-                else if(conf >= 0.3){
-                    severityClass = 'status-warning'; 
-                    label = 'MODERATE'; 
-                }
-
-                statusIndicator.className = `status-indicator ${severityClass}`;
-                statusIndicator.innerText = `${label} (${(conf * 100).toFixed(0)}%)`;
-            }
-            else{
-                statusIndicator.className = 'status-indicator status-normal';
-                statusIndicator.innerText = 'NORMAL (0%)';
-            }
-        }
-
-        function getTrendArrow(trend){
-            if(trend.includes('Rising Rapidly')){
-                return '📈🔴';
-            }
-            if(trend.includes('Rising Slowly')){
-                return '📈🟡';
-            }
-            if(trend.includes('Falling')){
-                return '📉';
-            }
-            return '➡️';
-        }
-
-        function displayAuditTrail(anomalies){
-            const container = document.getElementById('auditTrail');
-            if(!anomalies || anomalies.length === 0){
-                container.innerHTML = '<div class="no-data">No anomalies recorded in OSS yet. Trigger an event to see the audit trail!</div>';
-                return;
-            }
-            container.innerHTML = anomalies.map(a =>{
-                let severityClass = 'moderate';
-                if(a.confidence >= 0.8){
-                    severityClass = 'critical';
-                }
-
-                else if(a.confidence >= 0.6){
-                    severityClass = 'high';
-                }
-
-                const date = new Date(a.timestamp * 1000).toLocaleString();
-
-                return `
-                    <div class="audit-item ${severityClass}">
-                        <div class="audit-time">${date}</div>
-                        <div class="audit-type">⚠️ ${a.anomaly_type || 'Unknown'}</div>
-                        <div class="audit-confidence">Confidence: ${(a.confidence * 100).toFixed(0)}%</div>
-                        <div style="margin-top: 8px; font-size: 0.9em; color: #cbd5e1;">${a.qwen_diagnosis || 'No diagnosis available.'}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function askQwen(){
-            const input = document.getElementById('chatInput');
-            const btn = document.getElementById('chatBtn');
-            const responseDiv = document.getElementById('chatResponse');
-            const question = input.value.trim();
-            if(!question){
-                return;
-            }
-
-            responseDiv.innerText = 'Qwen is thinking...';
-            input.value = '';
-            btn.disabled = true;
-
-            try{
-                const res = await fetch(`${API_URL}/api/chat`,{
-                    method: 'POST',
-                    headers:{ 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: question })
-                });
-                const data = await res.json();
-                responseDiv.innerText = data.response || 'No response received.';
-            } 
-            catch(error){
-                responseDiv.innerText = 'Connection failed. Please try again.';
-            } 
-            finally{
-                btn.disabled = false;
-            }
-        }
-
-        document.getElementById('chatInput').addEventListener('keypress', function (e){
-            if(e.key === 'Enter'){
-                askQwen();
-            }
-        });
-
-        // Initialize Chart
-        function initChart() {
-            const ctx = document.getElementById('telemetryChart').getContext('2d');
-            chartInstance = new Chart(ctx,{
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        { label: 'Gas (kΩ)', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.3, yAxisID: 'y' },
-                        { label: 'Temp (°C)', data: [], borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.3, yAxisID: 'y1' },
-                        { label: 'Humidity (%)', data: [], borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', tension: 0.3, yAxisID: 'y1' }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: '#e2e8f0' } } },
-                    scales: {
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Gas (kΩ)', color: '#f59e0b' }, ticks: { color: '#f59e0b' }, grid: { color: '#334155' } },
-                        y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Temp/Hum', color: '#38bdf8' }, ticks: { color: '#38bdf8' }, grid: { drawOnChartArea: false } }
-                    }
-                }
-            });
-        }
-
-        async function updateChart(){
-            try{
-                const res = await fetch(`${API_URL}/api/history`);
-                if(!res.ok){ 
-                    throw new Error('Network response was not ok');
-                }
-
-                const data = await res.json();
-                if(data.history && chartInstance){
-                    chartInstance.data.labels = data.history.map(h => new Date(h.t * 1000).toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
-                    chartInstance.data.datasets[0].data = data.history.map(h => Math.round(h.gas / 1000));
-                    chartInstance.data.datasets[1].data = data.history.map(h => h.temp);
-                    chartInstance.data.datasets[2].data = data.history.map(h => h.hum);
-                    chartInstance.update();
-                }
-            } 
-            catch(error){
-                console.error('Error fetching chart data:', error);
-            }
-        }
-
-        // Initialize and set intervals
-        initChart();
-        fetchSensorData();
-        fetchAuditTrail();
-        fetchMLInsights();
-        updateChart();
-
-        setInterval(fetchSensorData, 3000);
-        setInterval(fetchAuditTrail, 30000);
-        setInterval(fetchMLInsights, 15000);
-        setInterval(updateChart, 10000);
-    </script>
+    <!-- Load script -->
+    <script src="script.js"></script>
 </body>
 </html>
